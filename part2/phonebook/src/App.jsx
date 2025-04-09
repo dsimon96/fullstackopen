@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
+/* eslint-disable react/prop-types */
+import { React, useState, useEffect } from "react";
+import phonebookService from "./services/phonebook";
 
 const Filter = ({ filter, onChange }) => {
   return (
@@ -24,8 +25,9 @@ const AddPersonForm = ({ addPerson }) => {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        addPerson(newPerson);
-        setNewPerson({ name: "", number: "" });
+        if (addPerson(newPerson)) {
+          setNewPerson({ name: "", number: "" });
+        }
       }}
     >
       <div>
@@ -49,7 +51,7 @@ const AddPersonForm = ({ addPerson }) => {
   );
 };
 
-const Persons = ({ persons, filter }) => {
+const Persons = ({ persons, filter, deletePerson }) => {
   const shownPersons = filter
     ? persons.filter((person) =>
         person.name.toUpperCase().includes(filter.toUpperCase())
@@ -61,6 +63,7 @@ const Persons = ({ persons, filter }) => {
       {shownPersons.map((person) => (
         <div key={person.name}>
           {person.name} {person.number}
+          <button onClick={() => deletePerson(person.id)}>delete</button>
         </div>
       ))}
     </>
@@ -74,16 +77,53 @@ const App = () => {
   const [filter, setFilter] = useState("");
 
   useEffect(() => {
-    axios.get("http://localhost:3001/persons").then((response) => {
-      setPersons(response.data);
+    phonebookService.getAll().then((initialPersons) => {
+      setPersons(initialPersons);
     });
   }, []);
 
   const addPerson = (newPerson) => {
-    if (persons.some((person) => person.name === newPerson.name)) {
-      alert(`${newPerson.name} is already added to phonebook`);
+    const existingPerson = persons.find(
+      (person) => person.name === newPerson.name
+    );
+    if (existingPerson) {
+      if (
+        existingPerson.number !== newPerson.number &&
+        window.confirm(
+          `${existingPerson.name} is already added to phonebook, do you want to update their phone number?`
+        )
+      ) {
+        phonebookService
+          .updatePerson(existingPerson.id, {
+            ...existingPerson,
+            number: newPerson.number,
+          })
+          .then((returnedPerson) => {
+            setPersons(
+              persons.map((person) =>
+                person.id === existingPerson.id ? returnedPerson : person
+              )
+            );
+          });
+        return true;
+      } else {
+        alert(`${newPerson.name} is already added to phonebook`);
+        return false;
+      }
     } else {
-      setPersons(persons.concat({ id: persons.length + 1, ...newPerson }));
+      phonebookService
+        .createPerson(newPerson)
+        .then((returnedPerson) => setPersons(persons.concat(returnedPerson)));
+      return true;
+    }
+  };
+
+  const deletePerson = (id) => {
+    const person = persons.find((p) => p.id === id);
+    if (window.confirm(`Delete ${person.name}?`)) {
+      phonebookService.deletePerson(id).then(() => {
+        setPersons(persons.filter((p) => p.id !== id));
+      });
     }
   };
 
@@ -94,7 +134,7 @@ const App = () => {
       <h2>Add a new entry</h2>
       <AddPersonForm addPerson={addPerson} />
       <h2>Numbers</h2>
-      <Persons persons={persons} filter={filter} />
+      <Persons persons={persons} filter={filter} deletePerson={deletePerson} />
     </>
   );
 };
