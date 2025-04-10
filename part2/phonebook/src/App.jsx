@@ -1,86 +1,25 @@
-/* eslint-disable react/prop-types */
 import { React, useState, useEffect } from "react";
 import phonebookService from "./services/phonebook";
-
-const Filter = ({ filter, onChange }) => {
-  return (
-    <form>
-      <label>
-        filter shown with:&nbsp;
-        <input value={filter} onChange={onChange} />
-      </label>
-    </form>
-  );
-};
-
-const AddPersonForm = ({ addPerson }) => {
-  const [newPerson, setNewPerson] = useState({ name: "", number: "" });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setNewPerson({ ...newPerson, [name]: value });
-  };
-
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (addPerson(newPerson)) {
-          setNewPerson({ name: "", number: "" });
-        }
-      }}
-    >
-      <div>
-        <label>
-          name:&nbsp;
-          <input name="name" value={newPerson.name} onChange={handleChange} />
-        </label>
-      </div>
-      <div>
-        <label>
-          number:&nbsp;
-          <input
-            name="number"
-            value={newPerson.number}
-            onChange={handleChange}
-          />
-        </label>
-      </div>
-      <button type="submit">add</button>
-    </form>
-  );
-};
-
-const Persons = ({ persons, filter, deletePerson }) => {
-  const shownPersons = filter
-    ? persons.filter((person) =>
-        person.name.toUpperCase().includes(filter.toUpperCase())
-      )
-    : persons;
-
-  return shownPersons.length > 0 ? (
-    <>
-      {shownPersons.map((person) => (
-        <div key={person.name}>
-          {person.name} {person.number}
-          <button onClick={() => deletePerson(person.id)}>delete</button>
-        </div>
-      ))}
-    </>
-  ) : (
-    <div>No entries matching filter</div>
-  );
-};
+import Notification from "./components/Notification";
+import Persons from "./components/Persons";
+import Filter from "./components/Filter";
+import AddPersonForm from "./components/AddPersonForm";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [filter, setFilter] = useState("");
+  const [notification, setNotification] = useState(null);
 
   useEffect(() => {
     phonebookService.getAll().then((initialPersons) => {
       setPersons(initialPersons);
     });
   }, []);
+
+  const showNotification = (notification) => {
+    setNotification(notification);
+    setTimeout(() => setNotification(null), 5000);
+  };
 
   const addPerson = (newPerson) => {
     const existingPerson = persons.find(
@@ -93,7 +32,7 @@ const App = () => {
           `${existingPerson.name} is already added to phonebook, do you want to update their phone number?`
         )
       ) {
-        phonebookService
+        return phonebookService
           .updatePerson(existingPerson.id, {
             ...existingPerson,
             number: newPerson.number,
@@ -104,8 +43,21 @@ const App = () => {
                 person.id === existingPerson.id ? returnedPerson : person
               )
             );
+            showNotification({
+              message: `Updated ${newPerson.name}`,
+              type: "success",
+            });
+          })
+          .catch((error) => {
+            console.error("Error updating person:", error);
+            showNotification({
+              message: `${newPerson.name} does not exist on the server`,
+              type: "error",
+            });
+            setPersons(
+              persons.filter((person) => person.id !== existingPerson.id)
+            );
           });
-        return true;
       } else {
         alert(`${newPerson.name} is already added to phonebook`);
         return false;
@@ -114,6 +66,10 @@ const App = () => {
       phonebookService
         .createPerson(newPerson)
         .then((returnedPerson) => setPersons(persons.concat(returnedPerson)));
+      showNotification({
+        message: `Added ${newPerson.name}`,
+        type: "success",
+      });
       return true;
     }
   };
@@ -121,15 +77,30 @@ const App = () => {
   const deletePerson = (id) => {
     const person = persons.find((p) => p.id === id);
     if (window.confirm(`Delete ${person.name}?`)) {
-      phonebookService.deletePerson(id).then(() => {
-        setPersons(persons.filter((p) => p.id !== id));
-      });
+      phonebookService
+        .deletePerson(id)
+        .then(() => {
+          setPersons(persons.filter((p) => p.id !== id));
+          showNotification({
+            message: `Deleted ${person.name}`,
+            type: "success",
+          });
+        })
+        .catch((error) => {
+          console.error("Error deleting person:", error);
+          showNotification({
+            message: `${person.name} does not exist on the server`,
+            type: "error",
+          });
+          setPersons(persons.filter((p) => p.id !== person.id));
+        });
     }
   };
 
   return (
     <>
       <h1>Phonebook</h1>
+      <Notification notification={notification} />
       <Filter filter={filter} onChange={(e) => setFilter(e.target.value)} />
       <h2>Add a new entry</h2>
       <AddPersonForm addPerson={addPerson} />
