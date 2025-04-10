@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import React from "react";
+import Weather from "./Weather";
 
 const Country = ({ country }) => {
   return (
@@ -13,7 +14,12 @@ const Country = ({ country }) => {
           <li key={language}>{language}</li>
         ))}
       </ul>
-      <img src={country.flags.png} alt={`flag of ${country.name.common}`} />
+      <img
+        src={country.flags.png}
+        alt={`flag of ${country.name.common}`}
+        style={{ border: "1px solid black" }}
+      />
+      <Weather capital={country.capital} latlng={country.capitalInfo.latlng} />
     </>
   );
 };

@@ -2,7 +2,7 @@
 import React from "react";
 import Country from "./Country";
 
-const Display = ({ countries }) => {
+const Display = ({ countries, onShow }) => {
   if (countries.length > 10) {
     return <div>Too many matches, specify another filter</div>;
   } else if (countries.length === 0) {
@@ -12,7 +12,10 @@ const Display = ({ countries }) => {
     return (
       <>
         {countries.map((country) => (
-          <div key={country.name.common}>{country.name.common}</div>
+          <div key={country.name.common}>
+            {country.name.common}{" "}
+            <button onClick={() => onShow(country)}>show</button>
+          </div>
         ))}
       </>
     );
