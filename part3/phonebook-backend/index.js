@@ -3,6 +3,7 @@ const morgan = require("morgan");
 const app = express();
 
 app.use(express.json());
+app.use(express.static("dist"));
 
 morgan.token("body", (req) => {
   if (req.method === "POST") {
@@ -54,10 +55,6 @@ let persons = [
     number: "39-23-6423122",
   },
 ];
-
-app.get("/", (req, res) => {
-  res.send("Hello World");
-});
 
 app.get("/info", (req, res) => {
   const now = new Date();
@@ -112,7 +109,7 @@ app.delete("/api/persons/:id", (req, res) => {
   res.status(204).end();
 });
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
