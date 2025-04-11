@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "build:frontend": "rm -rf dist && cd ../phonebook-frontend && pnpm run build && cp -r dist ../phonebook-backend/",
+    "debug": "node --inspect index.js",
     "dev": "node --watch index.js --watch dist",
     "deploy": "fly deploy",
     "deploy:full": "pnpm run build:frontend && pnpm run deploy",
@@ -17,6 +18,7 @@
   "packageManager": "pnpm@10.8.0",
   "dependencies": {
     "express": "^5.1.0",
+    "mongoose": "^8.13.2",
     "morgan": "^1.10.0"
   },
   "devDependencies": {
