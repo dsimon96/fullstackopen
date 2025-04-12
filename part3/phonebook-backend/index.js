@@ -1,7 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
-const mongoose = require("mongoose");
 const Person = require("./models/person");
 
 const app = express();
@@ -67,11 +66,6 @@ app.get("/api/persons/:id", (req, res, next) => {
 
 app.post("/api/persons", (req, res, next) => {
   const body = req.body;
-  if (!body.name || !body.number) {
-    return res.status(400).json({ error: "name and number are required" });
-  }
-
-  // TODO ensure unique name
 
   new Person({ name: body.name, number: body.number })
     .save()
@@ -83,11 +77,11 @@ app.post("/api/persons", (req, res, next) => {
 
 app.put("/api/persons/:id", (req, res, next) => {
   const body = req.body;
-  if (!body.name || !body.number) {
-    return res.status(400).json({ error: "name and number are required" });
-  }
 
-  Person.findByIdAndUpdate(req.params.id, body, { new: true })
+  Person.findByIdAndUpdate(req.params.id, body, {
+    new: true,
+    runValidators: true,
+  })
     .then((updatedPerson) => {
       if (updatedPerson) {
         res.json(updatedPerson);
@@ -117,6 +111,8 @@ const errorHandler = (error, req, res, next) => {
 
   if (error.name === "CastError") {
     return res.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    return res.status(400).json({ error: error.message });
   }
 
   next(error);

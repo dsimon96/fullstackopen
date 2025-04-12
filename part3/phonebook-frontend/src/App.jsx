@@ -49,28 +49,44 @@ const App = () => {
             });
           })
           .catch((error) => {
-            console.error("Error updating person:", error);
-            showNotification({
-              message: `${newPerson.name} does not exist on the server`,
-              type: "error",
-            });
-            setPersons(
-              persons.filter((person) => person.id !== existingPerson.id)
-            );
+            if (error.response.status === 404) {
+              showNotification({
+                message: `${existingPerson.name} was already deleted from the server`,
+                type: "error",
+              });
+              setPersons(
+                persons.filter((person) => person.id !== existingPerson.id)
+              );
+            } else {
+              console.error("Error updating person:", error);
+              showNotification({
+                message: error.response.data.error,
+                type: "error",
+              });
+            }
+            throw error;
           });
       } else {
         alert(`${newPerson.name} is already added to phonebook`);
-        return false;
+        return Promise.reject(new Error("Person already exists"));
       }
     } else {
-      phonebookService
+      return phonebookService
         .createPerson(newPerson)
-        .then((returnedPerson) => setPersons(persons.concat(returnedPerson)));
-      showNotification({
-        message: `Added ${newPerson.name}`,
-        type: "success",
-      });
-      return true;
+        .then((returnedPerson) => {
+          setPersons(persons.concat(returnedPerson));
+          showNotification({
+            message: `Added ${newPerson.name}`,
+            type: "success",
+          });
+        })
+        .catch((error) => {
+          console.error("Error adding person:", error);
+          showNotification({
+            message: error.response.data.error,
+            type: "error",
+          });
+        });
     }
   };
 

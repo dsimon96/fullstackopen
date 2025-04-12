@@ -14,9 +14,9 @@ export const AddPersonForm = ({ addPerson }) => {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (addPerson(newPerson)) {
+        addPerson(newPerson).then(() => {
           setNewPerson({ name: "", number: "" });
-        }
+        });
       }}
     >
       <div>
