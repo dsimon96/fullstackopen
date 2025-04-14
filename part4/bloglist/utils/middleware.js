@@ -1,7 +1,9 @@
 const { StatusCodes } = require("http-status-codes");
 
 const errorHandler = (error, request, response, next) => {
-  console.error(error.message);
+  if (process.env.NODE_ENV !== "test") {
+    console.error(error.message);
+  }
 
   if (error.name === "ValidationError") {
     return response

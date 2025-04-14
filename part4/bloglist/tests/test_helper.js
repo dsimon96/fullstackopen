@@ -1,3 +1,6 @@
+const Blog = require("../models/blog");
+const mongoose = require("mongoose");
+
 const listWithOneBlog = [
   {
     _id: "5a422aa71b54a676234d17f8",
@@ -9,7 +12,7 @@ const listWithOneBlog = [
   },
 ];
 
-const blogs = [
+const initialBlogs = [
   {
     _id: "5a422a851b54a676234d17f7",
     title: "React patterns",
@@ -60,4 +63,13 @@ const blogs = [
   },
 ];
 
-module.exports = { blogs, listWithOneBlog };
+const getAllBlogs = async () => {
+  const allBlogs = await Blog.find({});
+  return allBlogs.map((blog) => blog.toJSON());
+};
+
+const nonExistentId = () => {
+  return new mongoose.Types.ObjectId();
+};
+
+module.exports = { initialBlogs, listWithOneBlog, getAllBlogs, nonExistentId };
