@@ -1,17 +1,17 @@
 const Blog = require("../models/blog");
 const blogRouter = require("express").Router();
+const { StatusCodes } = require("http-status-codes");
 
 blogRouter.get("/", async (_, response) => {
   const blogs = await Blog.find({});
   response.json(blogs);
 });
 
-blogRouter.post("/", (request, response) => {
+blogRouter.post("/", async (request, response) => {
   const blog = new Blog(request.body);
+  const result = await blog.save();
 
-  blog.save().then((result) => {
-    response.status(201).json(result);
-  });
+  response.status(StatusCodes.CREATED).json(result);
 });
 
 module.exports = blogRouter;
