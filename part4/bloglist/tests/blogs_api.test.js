@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const supertest = require("supertest");
 const app = require("../app");
 const Blog = require("../models/blog");
-const StatusCodes = require("http-status-codes");
+const { StatusCodes } = require("http-status-codes");
 const { blogs } = require("./test_helper");
 
 const api = supertest(app);
