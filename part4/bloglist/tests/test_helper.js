@@ -1,4 +1,5 @@
 const Blog = require("../models/blog");
+const User = require("../models/user");
 const mongoose = require("mongoose");
 
 const listWithOneBlog = [
@@ -72,4 +73,29 @@ const nonExistentId = () => {
   return new mongoose.Types.ObjectId();
 };
 
-module.exports = { initialBlogs, listWithOneBlog, getAllBlogs, nonExistentId };
+const initialUsers = [
+  {
+    username: "hellas",
+    name: "Hellas",
+    password: "1234",
+  },
+  {
+    username: "mluukkai",
+    name: "Matti Luukkai",
+    password: "5678",
+  },
+];
+
+const getAllUsers = async () => {
+  const allUsers = await User.find({});
+  return allUsers.map((user) => user.toJSON());
+};
+
+module.exports = {
+  initialBlogs,
+  listWithOneBlog,
+  getAllBlogs,
+  nonExistentId,
+  initialUsers,
+  getAllUsers,
+};
