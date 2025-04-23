@@ -23,4 +23,13 @@ const errorHandler = (error, request, response, next) => {
   return next(error);
 };
 
-module.exports = { errorHandler };
+const tokenExtractor = (request, response, next) => {
+  const authHeader = request.get("authorization");
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    request.token = authHeader.replace("Bearer ", "");
+  }
+
+  next();
+};
+
+module.exports = { errorHandler, tokenExtractor };

@@ -10,17 +10,9 @@ blogRouter.get("/", async (_, response) => {
   return response.json(blogs);
 });
 
-const getTokenFrom = (request) => {
-  const authHeader = request.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-  return authHeader.replace("Bearer ", "");
-};
-
 blogRouter.post("/", async (request, response) => {
   const { title, url, author, likes } = request.body;
-  const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET);
+  const decodedToken = jwt.verify(request.token, process.env.SECRET);
   if (!decodedToken.id) {
     return response.status(StatusCodes.UNAUTHORIZED).json({
       error: "Invalid token",
