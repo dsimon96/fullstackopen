@@ -14,6 +14,10 @@ const errorHandler = (error, request, response, next) => {
     return response
       .status(StatusCodes.BAD_REQUEST)
       .send({ error: "expected `username` to be unique" });
+  } else if (error.name === "JsonWebTokenError") {
+    return response
+      .status(StatusCodes.UNAUTHORIZED)
+      .send({ error: "Invalid token" });
   }
 
   return next(error);
