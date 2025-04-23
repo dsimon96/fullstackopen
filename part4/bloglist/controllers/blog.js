@@ -1,8 +1,8 @@
 const jwt = require("jsonwebtoken");
 const Blog = require("../models/blog");
-const User = require("../models/user");
 const blogRouter = require("express").Router();
 const { StatusCodes } = require("http-status-codes");
+const { userExtractor } = require("../utils/middleware");
 
 blogRouter.get("/", async (_, response) => {
   const blogs = await Blog.find({}).populate("user", { username: 1, name: 1 });
@@ -10,16 +10,9 @@ blogRouter.get("/", async (_, response) => {
   return response.json(blogs);
 });
 
-blogRouter.post("/", async (request, response) => {
+blogRouter.post("/", userExtractor, async (request, response) => {
   const { title, url, author, likes } = request.body;
-  const decodedToken = jwt.verify(request.token, process.env.SECRET);
-  if (!decodedToken.id) {
-    return response.status(StatusCodes.UNAUTHORIZED).json({
-      error: "Invalid token",
-    });
-  }
-
-  const user = await User.findById(decodedToken.id);
+  const user = request.user;
   if (!user) {
     return response.status(StatusCodes.UNAUTHORIZED).json({
       error: "Invalid user",
@@ -40,31 +33,48 @@ blogRouter.post("/", async (request, response) => {
   return response.status(StatusCodes.CREATED).json(savedNote);
 });
 
-blogRouter.delete("/:id", async (request, response) => {
-  const result = await Blog.findByIdAndDelete(request.params.id);
-
-  if (!result) {
+blogRouter.delete("/:id", userExtractor, async (request, response) => {
+  const user = request.user;
+  const blogToDelete = await Blog.findById(request.params.id);
+  if (!blogToDelete) {
     return response
       .status(StatusCodes.NOT_FOUND)
       .json({ error: "Blog not found" });
+  } else if (blogToDelete.user.toString() !== user.id.toString()) {
+    return response.status(StatusCodes.UNAUTHORIZED).json({
+      error: "User not authorized to delete this blog",
+    });
   }
+
+  await blogToDelete.deleteOne();
+  user.blogs = user.blogs.filter(
+    (blog) => blog.toString() !== blogToDelete.id.toString(),
+  );
+  await user.save();
 
   return response.status(StatusCodes.NO_CONTENT).end();
 });
 
-blogRouter.put("/:id", async (request, response) => {
-  const blog = await Blog.findByIdAndUpdate(request.params.id, request.body, {
-    new: true,
-    runValidators: true,
-  });
-
+blogRouter.put("/:id", userExtractor, async (request, response) => {
+  const user = request.user;
+  const blog = await Blog.findById(request.params.id);
   if (!blog) {
     return response
       .status(StatusCodes.NOT_FOUND)
       .json({ error: "Blog not found" });
+  } else if (blog.user.toString() !== user.id.toString()) {
+    return response.status(StatusCodes.UNAUTHORIZED).json({
+      error: "User not authorized to update this blog",
+    });
   }
 
-  return response.json(blog);
+  const updatedBlog = await Blog.findByIdAndUpdate(
+    request.params.id,
+    request.body,
+    { new: true, runValidators: true },
+  );
+
+  return response.json(updatedBlog);
 });
 
 module.exports = blogRouter;

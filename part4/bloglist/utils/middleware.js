@@ -1,6 +1,8 @@
 const { StatusCodes } = require("http-status-codes");
+const jwt = require("jsonwebtoken");
+const User = require("../models/user");
 
-const errorHandler = (error, request, response, next) => {
+const errorHandler = (error, _, response, next) => {
   if (process.env.NODE_ENV !== "test") {
     console.error(error.message);
   } else if (error.name === "ValidationError") {
@@ -29,7 +31,27 @@ const tokenExtractor = (request, response, next) => {
     request.token = authHeader.replace("Bearer ", "");
   }
 
-  next();
+  return next();
 };
 
-module.exports = { errorHandler, tokenExtractor };
+const userExtractor = async (request, response, next) => {
+  const decodedToken = jwt.verify(request.token, process.env.SECRET);
+  if (!decodedToken.id) {
+    return response.status(StatusCodes.UNAUTHORIZED).json({
+      error: "Invalid token",
+    });
+  }
+
+  const user = await User.findById(decodedToken.id);
+  if (!user) {
+    return response.status(StatusCodes.UNAUTHORIZED).json({
+      error: "Invalid user",
+    });
+  }
+
+  request.user = user;
+
+  return next();
+};
+
+module.exports = { errorHandler, tokenExtractor, userExtractor };
