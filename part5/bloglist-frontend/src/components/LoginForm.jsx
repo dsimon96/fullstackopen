@@ -1,7 +1,7 @@
 import { useState } from "react";
 import loginService from "../services/login";
 
-const LoginForm = ({ user, handleLogin, handleLogout }) => {
+const LoginForm = ({ user, handleLogin, handleFailedLogin, handleLogout }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -15,12 +15,12 @@ const LoginForm = ({ user, handleLogin, handleLogout }) => {
       handleLogin(user);
     } catch (error) {
       console.log(error);
+      handleFailedLogin();
     }
   };
 
   const loginForm = () => (
     <>
-      <h2>log in to application</h2>
       <form onSubmit={handleSubmit}>
         <div>
           <label htmlFor="username">username</label>
